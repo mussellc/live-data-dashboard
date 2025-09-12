@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Live Movie Data Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+    <!-- Title -->
+    <h1>Popular Movies</h1>
+    <!-- Movie Grid -->
+    <div class="movie-grid">
+        {% for movie in movies %}
+            <!-- Movie Card -->
+            <div class="movie-card">
+                <!-- Movie Poster -->
+                <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }}">
+                <h3>{{ movie.title }}</h3>
+                <p><strong>Rating:</strong> {{ movie.vote_average }}</p>
+                <p><strong>Genres:</strong> {{ movie.genres|join(', ') }}</p>
+                <p><strong>Runtime:</strong> {{ movie.runtime if movie.runtime else "N/A" }} min</p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
