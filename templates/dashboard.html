@@ -1,27 +1,111 @@
+<!--
+Dashboard Template
+Contains:
+- Filter controls (genre, year, min score, runtime)
+- Search bar (title/cast)
+- Grid to display movies
+- Show More button for pagination
+- Modal for cast display
+-->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title> Live Movie Data Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
-</head>
-<body>
-    <!-- Title -->
-    <h1>Popular Movies</h1>
-    <!-- Movie Grid -->
-    <div class="movie-grid">
-        {% for movie in movies %}
-            <!-- Movie Card -->
-            <div class="movie-card">
-                <!-- Movie Poster -->
-                <img src="https://image.tmdb.org/t/p/w200{{ movie.poster_path }}" alt="{{ movie.title }}">
-                <h3>{{ movie.title }}</h3>
-                <p><strong>Rating:</strong> {{ movie.vote_average }}</p>
-                <p><strong>Genres:</strong> {{ movie.genres|join(', ') }}</p>
-                <p><strong>Runtime:</strong> {{ movie.runtime if movie.runtime else "N/A" }} min</p>
-            </div>
-        {% endfor %}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Movie Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <!-- Header with title + dark mode toggle -->
+    <header class="header">
+      <div class="title">Movie Dashboard</div>
+      <div class="header-right">
+        <button id="dark-toggle" class="btn">🌙</button>
+      </div>
+    </header>
+
+    <!-- Top controls section -->
+    <section class="controls">
+      <!-- Left: filters -->
+      <div class="filters-left">
+        <!-- Genre dropdown populated via /api/genres -->
+        <label
+          >Genre
+          <select id="genre-select">
+            <option value="">All</option>
+          </select>
+        </label>
+
+        <!-- Year dropdown populated dynamically in JS -->
+        <label
+          >Year
+          <select id="year-select">
+            <option value="">Any</option>
+          </select>
+        </label>
+
+        <!-- Min score slider -->
+        <label
+          >Min Score
+          <div class="slider-row">
+            <input
+              type="range"
+              id="score-slider"
+              min="0"
+              max="10"
+              step="0.1"
+              value="0"
+            />
+            <span id="score-value">0</span>
+          </div>
+        </label>
+
+        <!-- Runtime filters -->
+        <label
+          >Runtime (min / max)
+          <div class="runtime-row">
+            <input type="number" id="runtime-min" placeholder="min" min="0" />
+            <input type="number" id="runtime-max" placeholder="max" min="0" />
+          </div>
+        </label>
+
+        <!-- Filter actions -->
+        <div class="filter-buttons">
+          <button id="apply-filters" class="btn primary">Apply Filters</button>
+          <button id="clear-filters" class="btn">Clear Filters</button>
+        </div>
+      </div>
+
+      <!-- Right: search controls -->
+      <div class="search-right">
+        <div class="search-row">
+          <input id="search-input" placeholder="Search..." />
+          <select id="search-type">
+            <option value="title">Title</option>
+            <option value="cast">Cast / Director</option>
+          </select>
+          <button id="search-button" class="btn">Search</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main grid where movies are displayed -->
+    <main>
+      <div id="movie-grid" class="movie-grid"></div>
+      <div class="show-more-row">
+        <button id="show-more" class="btn">Show More</button>
+      </div>
+    </main>
+
+    <!-- Modal overlay for viewing cast -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal">
+        <button id="modal-close" class="modal-close">✕</button>
+        <div id="modal-content" class="modal-content"></div>
+      </div>
     </div>
-</body>
+
+    <!-- Frontend logic -->
+    <script src="/static/js/script.js"></script>
+  </body>
 </html>
