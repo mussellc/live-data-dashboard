@@ -3,7 +3,7 @@ Dashboard Template
 Contains:
 - Filter controls (genre, year, min score, runtime)
 - Search bar (title/cast)
-- Grid to display movies
+- List to display movies
 - Show More button for pagination
 - Modal for cast display
 -->
@@ -24,29 +24,27 @@ Contains:
       </div>
     </header>
 
-    <!-- Top controls section -->
-    <section class="controls">
-      <!-- Left: filters -->
-      <div class="filters-left">
+    <!-- Content wrapper for sidebar + search results -->
+    <div class="content-wrapper">
+      <!-- Left sidebar filters + search -->
+      <aside class="sidebar">
         <!-- Genre dropdown populated via /api/genres -->
-        <label
-          >Genre
+        <label>
+          Genre
           <select id="genre-select">
             <option value="">All</option>
           </select>
         </label>
 
-        <!-- Year dropdown populated dynamically in JS -->
-        <label
-          >Year
-          <select id="year-select">
-            <option value="">Any</option>
-          </select>
+        <!-- Year text input -->
+        <label>
+          Year
+          <input type="number" id="year-input" placeholder="YYYY" min="1900" />
         </label>
 
         <!-- Min score slider -->
-        <label
-          >Min Score
+        <label>
+          Min Score
           <div class="slider-row">
             <input
               type="range"
@@ -61,8 +59,8 @@ Contains:
         </label>
 
         <!-- Runtime filters -->
-        <label
-          >Runtime (min / max)
+        <label>
+          Runtime (min / max)
           <div class="runtime-row">
             <input type="number" id="runtime-min" placeholder="min" min="0" />
             <input type="number" id="runtime-max" placeholder="max" min="0" />
@@ -74,34 +72,36 @@ Contains:
           <button id="apply-filters" class="btn primary">Apply Filters</button>
           <button id="clear-filters" class="btn">Clear Filters</button>
         </div>
-      </div>
 
-      <!-- Right: search controls -->
-      <div class="search-right">
-        <div class="search-row">
-          <input id="search-input" placeholder="Search..." />
-          <select id="search-type">
-            <option value="title">Title</option>
-            <option value="cast">Cast / Director</option>
-          </select>
-          <button id="search-button" class="btn">Search</button>
+        <!-- Search controls -->
+        <div class="search-controls">
+          <div class="search-row">
+            <input id="search-input" placeholder="Search..." />
+            <select id="search-type">
+              <option value="title">Title</option>
+              <option value="cast">Cast / Director</option>
+            </select>
+          </div>
+          <button id="search-button" class="btn primary">Search</button>
         </div>
-      </div>
-    </section>
+      </aside>
 
-    <!-- Main grid where movies are displayed -->
-    <main>
-      <div id="movie-grid" class="movie-grid"></div>
-      <div class="show-more-row">
-        <button id="show-more" class="btn">Show More</button>
-      </div>
-    </main>
+      <!-- Right list where movies are displayed -->
+      <main>
+        <div id="movie-list" class="movie-list"></div>
+        <div class="show-more-row">
+          <button id="show-more" class="btn">Show More</button>
+        </div>
+      </main>
+    </div>
 
-    <!-- Modal overlay for viewing cast -->
+    <!-- Modal overlay for movie details + cast -->
     <div id="modal-overlay" class="modal-overlay hidden">
       <div class="modal">
         <button id="modal-close" class="modal-close">✕</button>
-        <div id="modal-content" class="modal-content"></div>
+        <div id="modal-content" class="modal-content">
+          <!-- JS populates movie poster, title, release date, runtime, rating, description, and cast list -->
+        </div>
       </div>
     </div>
 

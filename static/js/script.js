@@ -2,7 +2,7 @@
 
 // --- Domain Element References ---
 const genreSelect = document.getElementById("genre-select");
-const yearSelect = document.getElementById("year-select");
+const yearInput = document.getElementById("year-input");
 const scoreSlider = document.getElementById("score-slider");
 const scoreValue = document.getElementById("score-value");
 const runtimeMin = document.getElementById("runtime-min");
@@ -14,7 +14,7 @@ const searchInput = document.getElementById("search-input");
 const searchType = document.getElementById("search-type");
 const searchButton = document.getElementById("search-button");
 
-const movieGrid = document.getElementById("movie-grid");
+const movieList = document.getElementById("movie-list");
 const showMoreBtn = document.getElementById("show-more");
 
 const darkToggle = document.getElementById("dark-toggle");
@@ -30,9 +30,8 @@ let castCache = new Map(); // client-side cache for credits
 
 // --- Initialize UI ---
 scoreValue.textContent = scoreSlider.value; // initialize score label
-populateYears(); // populate year dropdown
 loadGenres().then(() => {
-  // Load first page of popular movies
+  // Load first page
   loadMovies({ page: 1 });
 });
 
@@ -46,7 +45,7 @@ scoreSlider.addEventListener("input", () => {
 applyBtn.addEventListener("click", () => {
   const params = {};
   if (genreSelect.value) params.genre = genreSelect.value;
-  if (yearSelect.value) params.year = yearSelect.value;
+  if (yearInput.value) params.year = yearInput.value;
   if (scoreSlider.value && Number(scoreSlider.value) > 0)
     params.min_score = scoreSlider.value;
   if (runtimeMin.value) params.runtime_min = runtimeMin.value;
@@ -61,7 +60,7 @@ applyBtn.addEventListener("click", () => {
 // Clear filters button resets everything
 clearBtn.addEventListener("click", () => {
   genreSelect.value = "";
-  yearSelect.value = "";
+  yearInput.value = "";
   scoreSlider.value = 0;
   scoreValue.textContent = "0";
   runtimeMin.value = "";
@@ -86,7 +85,7 @@ function doSearch() {
 
   // Clear filters visually
   genreSelect.value = "";
-  yearSelect.value = "";
+  yearInput.value = "";
   scoreSlider.value = 0;
   scoreValue.textContent = "0";
   runtimeMin.value = "";
@@ -143,17 +142,6 @@ async function loadGenres() {
   }
 }
 
-// Fill year dropdown from current year down to 1900
-function populateYears() {
-  const now = new Date().getFullYear();
-  for (let y = now; y >= 1900; y--) {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    yearSelect.appendChild(opt);
-  }
-}
-
 // Generic loader for movies
 // params -> forwarded to backend as query string
 // options.append = true -> append instead of replacing
@@ -171,117 +159,128 @@ async function loadMovies(params = {}, options = {}) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // Determine if more pages exist
+    // Show or hide "Show More" button
     const totalPages = data.total_pages || 1;
-    if ((params.page || 1) < totalPages) {
-      showMoreBtn.style.display = "inline-block";
-    } else {
-      showMoreBtn.style.display = "none";
-    }
+    showMoreBtn.style.display =
+      (params.page || 1) < totalPages ? "inline-block" : "none";
   } catch (err) {
     console.error("loadMovies error", err);
   }
 }
 
-// Replace grid contents
+// Replace list contents
 function renderMovies(movies) {
-  movieGrid.innerHTML = "";
+  movieList.innerHTML = "";
   appendMovies(movies);
 }
 
-// Append new cards to grid
+// Append new movie cards to list
 function appendMovies(movies) {
   movies.forEach((movie) => {
     const card = document.createElement("div");
     card.className = "movie-card";
 
     const posterPath = movie.poster_path
-      ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+      ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
       : "";
-    const genres = movie.genre_ids
-      ? movie.genre_ids.map(idToGenreName).filter(Boolean).join(", ")
-      : movie.genres
-      ? movie.genres.map((g) => g.name).join(", ")
-      : "";
-    const release = movie.release_date || movie.first_air_date || "N/A";
 
+    // Construct card with details + truncated description
     card.innerHTML = `
-      ${
-        posterPath
-          ? `<img src="${posterPath}" alt="${escapeHtml(movie.title)}">`
-          : `<div style="height:240px;background:#ddd;border-radius:8px"></div>`
-      }
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong style="font-size:14px">${escapeHtml(movie.title)}</strong>
-          <span style="font-size:13px;color:var(--muted)">${
-            movie.vote_average ?? "N/A"
-          }</span>
-        </div>
-        <div class="movie-meta">
-          <div><small>${genres}</small></div>
-          <div><small>Release: ${release}</small></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <button class="btn view-cast" data-movie-id="${
-            movie.id
-          }">View Cast</button>
-        </div>
+      <div class="card-left">
+        ${
+          posterPath
+            ? `<img src="${posterPath}" alt="${escapeHtml(movie.title)}">`
+            : `<div class="poster-placeholder"></div>`
+        }
+      </div>
+      <div class="card-right">
+        <h3>${escapeHtml(movie.title)}</h3>
+        <p class="meta meta-top">
+          ${movie.release_date || "N/A"}
+          ${movie.runtime ? ` • ${movie.runtime} min` : ""}
+        </p>
+        <p class="meta meta-bottom">
+          ⭐ ${Number(movie.vote_average).toFixed(2)} 
+          (${movie.vote_count})
+        </p>
+        <p class="description">${escapeHtml(movie.overview)}</p>
       </div>
     `;
-    movieGrid.appendChild(card);
-  });
 
-  // Attach click handler for each "View Cast" button
-  document.querySelectorAll(".view-cast").forEach((btn) => {
-    btn.onclick = async (e) => {
-      const movieId = btn.getAttribute("data-movie-id");
-      await openCastModal(movieId);
-    };
+    // Make card clickable to open modal
+    card.addEventListener("click", () => openMovieModal(movie.id, movie));
+
+    movieList.appendChild(card);
   });
 }
 
-// Helper to map genre id -> name using loaded genreSelect options
-function idToGenreName(id) {
-  const opt = genreSelect.querySelector(`option[value="${id}"]`);
-  return opt ? opt.textContent : null;
-}
-
-// Modal open for cast/crew
-async function openCastModal(movieId) {
+// Modal open with movie details + cast
+async function openMovieModal(movieId, movieData) {
   try {
-    // Try cache first
-    let data = castCache.get(movieId);
-    if (!data) {
+    let castData = castCache.get(movieId);
+    if (!castData) {
       const res = await fetch(`/api/movie/${movieId}/credits`);
-      data = await res.json();
-      castCache.set(movieId, data);
+      castData = await res.json();
+      castCache.set(movieId, castData);
     }
 
-    const cast = (data.cast || []).slice(0, 12); // show top 12
-    const crew = data.crew || [];
+    const cast = (castData.cast || []).slice(0, 20);
+    const crew = castData.crew || [];
     const directors = crew.filter((c) => c.job === "Director");
 
     modalContent.innerHTML = `
-      <h2>Cast</h2>
-      <ul>${cast
-        .map((c) => `<li>${c.name} as ${c.character}</li>`)
-        .join("")}</ul>
+      <div class="modal-header">
+        ${
+          movieData.poster_path
+            ? `<img src="https://image.tmdb.org/t/p/w300${
+                movieData.poster_path
+              }" alt="${escapeHtml(movieData.title)}">`
+            : ""
+        }
+        <div class="modal-info">
+          <h2>${escapeHtml(movieData.title)}</h2>
+          <p>${movieData.release_date || "N/A"} • 
+             ${movieData.runtime ? movieData.runtime + " min" : "?"} • 
+             ${Number(movieData.vote_average).toFixed(2)} 
+             (${movieData.vote_count ?? 0} votes)</p>
+          <p>${movieData.overview || "No overview available."}</p>
+        </div>
+      </div>
+      <h3>Cast</h3>
+      <div class="cast-list">
+        ${cast
+          .map(
+            (c) => `
+          <div class="cast-member">
+            ${
+              c.profile_path
+                ? `<img src="https://image.tmdb.org/t/p/w185${
+                    c.profile_path
+                  }" alt="${escapeHtml(c.name)}">`
+                : `<div class="cast-placeholder"></div>`
+            }
+            <span>${c.name} as ${c.character}</span>
+          </div>`
+          )
+          .join("")}
+      </div>
       ${
         directors.length
-          ? `<h3>Director(s)</h3><ul>${directors
+          ? `<h4>Director(s)</h4><ul>${directors
               .map((d) => `<li>${d.name}</li>`)
               .join("")}</ul>`
           : ""
       }
     `;
     modalOverlay.classList.remove("hidden");
+    modalOverlay.classList.add("show");
   } catch (err) {
-    console.error("openCastModal error", err);
+    console.error("openMovieModal error", err);
   }
 }
 
 function closeModal() {
+  modalOverlay.classList.remove("show");
   modalOverlay.classList.add("hidden");
 }
 
